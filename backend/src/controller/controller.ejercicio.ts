@@ -54,6 +54,7 @@ export const registrarEjercicio = async (req: Request, res: Response) => {
 };
 export const actualizarEjercicio = async (req: Request, res: Response) => {
     try {
+    
         const ejercicio: ejercicio = {
             id_ejercicio: req.body.id_ejercicio,
             nombre_ejercicio: req.body.nombre_ejercicio,
