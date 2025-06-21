@@ -1,5 +1,8 @@
 import e, { Request, Response } from 'express';
 import { pool } from '../data/conexion.data';
+import { Rutina } from '../types/type.rutina';
+
+import { validarRutina, verificarRutinaPorId } from '../helpers/rutina.helper';
 
 /**
  * Controlador para manejar las operaciones relacionadas con el progreso de los usuarios.
@@ -7,13 +10,6 @@ import { pool } from '../data/conexion.data';
  * 
  * @module controller.progreso
  */
-type rutina = {
-    id_rutina: number,
-    tiempo_rutina: number,
-    fehca_inicio: Date,
-    fecha_fin: Date,
-    descripcion: string,
-}
 
 export const listarRutina = async (_req: Request, res: Response) => {
     try {
@@ -29,22 +25,35 @@ export const listarRutina = async (_req: Request, res: Response) => {
 };
 export const registrarRutina = async (req: Request, res: Response) => {
     try {
-        const rutina: rutina = {
-            id_rutina: req.body.id_rutina,
-            tiempo_rutina: req.body.tiempo_rutina,
-            fehca_inicio: req.body.fehca_inicio,
-            fecha_fin: req.body.fecha_fin,
-            descripcion: req.body.descripcion
-        };
+                const existeRutina = await verificarRutinaPorId(req.body.id_rutina ? req.body.id_rutina : 0);
+                if (req.body.id_rutina && existeRutina) {
+                    res.status(400).json({ message: 'La rutina ya existe, verifique el ID', status: 400 });
+                    return;
+                }
+                    
+                const rutina: Rutina = {
+                    id_rutina: req.body.id_rutina,
+                    tiempo_rutina: req.body.tiempo_rutina,
+                    fecha_inicio: req.body.fecha_inicio,
+                    fecha_fin: req.body.fecha_fin,
+                    descripcion: req.body.descripcion
+                };
+
+        // Validar los datos de la rutina
+        const { valido, errores } = validarRutina(req.body);
+        if (!valido) {
+            res.status(400).json({ message: 'Datos inválidos: ' + errores.join(', '), status: 400 });
+            return;
+        }
 
         const sql = `
-            INSERT INTO rutina (id_rutina, tiempo_rutina, fehca_inicio, fecha_fin, descripcion)
+            INSERT INTO rutina (id_rutina, tiempo, fecha_inicio, fecha_fin, descripcion)
             VALUES ($1, $2, $3, $4, $5)`;
 
         const resultado = await pool.query(sql, [
             rutina.id_rutina,
             rutina.tiempo_rutina,
-            rutina.fehca_inicio,
+            rutina.fecha_inicio,
             rutina.fecha_fin,
             rutina.descripcion
         ]);
@@ -60,23 +69,23 @@ export const registrarRutina = async (req: Request, res: Response) => {
 };
 export const actualizarRutina = async (req: Request, res: Response) => {
     try {
-        const rutina: rutina = {
+        const rutina: Rutina = {
             id_rutina: req.body.id_rutina,
             tiempo_rutina: req.body.tiempo_rutina,
-            fehca_inicio: req.body.fehca_inicio,
+            fecha_inicio: req.body.fecha_inicio,
             fecha_fin: req.body.fecha_fin,
             descripcion: req.body.descripcion
         };
 
         const sql = `
             UPDATE rutina
-            SET tiempo_rutina = $2, fehca_inicio = $3, fecha_fin = $4, descripcion = $5
+            SET tiempo_rutina = $2, fecha_inicio = $3, fecha_fin = $4, descripcion = $5
             WHERE id_rutina = $1`;
 
         const resultado = await pool.query(sql, [
             rutina.id_rutina,
             rutina.tiempo_rutina,
-            rutina.fehca_inicio,
+            rutina.fecha_inicio,
             rutina.fecha_fin,
             rutina.descripcion
         ]);
